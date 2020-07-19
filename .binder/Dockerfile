@@ -48,14 +48,15 @@ RUN apt-get update -qq && \
         wget \
         ca-certificates \
         petsc-dev \
-        gfortran  && \
+        gfortran \
+        htop && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
 
 # Install setuptools and wheel first, needed by plotly
-RUN pip3 install -U pip         && \
-    pip3 config --global set global.cache-dir false && \
+RUN pip3 config --global set global.cache-dir false && \
+    pip3 install -U pip         && \
     pip3 install -U setuptools  && \
     pip3 install -U wheel       && \
     pip3 install --no-cache-dir    \
@@ -80,7 +81,8 @@ RUN pip3 install -U pip         && \
         mpi4py \
         scons \
         h5py \
-        lavavu
+        lavavu \
+        yapf
 
 RUN pip3 install git+https://github.com/underworldcode/underworld2@v2.10_release
 RUN pip3 install UWGeodynamics
@@ -90,4 +92,3 @@ RUN pip3 install UWGeodynamics
 ENV UW_USE_XVFB 1
 
 USER ${NB_USER}
-CMD ["jupyter", "notebook", "--no-browser", "--ip='0.0.0.0'"]
