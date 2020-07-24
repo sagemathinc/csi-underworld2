@@ -13,8 +13,6 @@ RUN adduser --disabled-password \
     --uid ${NB_UID} \
     ${NB_USER}
 
-WORKDIR ${HOME}
-
 RUN apt-get update -qq && \
     apt-get install -yq --no-install-recommends \
         bash-completion \
@@ -24,17 +22,8 @@ RUN apt-get update -qq && \
         python3-dev \
         python3-pip \
         libxml2-dev \
-        xorg-dev \
         ssh \
         curl \
-        libfreetype6-dev \
-        libpng-dev \
-        libxft-dev \
-        xvfb \
-        freeglut3 \
-        freeglut3-dev \
-        libgl1-mesa-dri \
-        libgl1-mesa-glx \
         python3-tk \
         rsync \
         vim \
@@ -53,6 +42,12 @@ RUN apt-get update -qq && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
+COPY --from=underworldcode/base:lavavu /usr/local /usr/local
+COPY --from=underworldcode/base:lavavu /opt/installed.txt  /opt/installed.txt
+RUN apt-get update \
+&&  DEBIAN_FRONTEND=noninteractive apt-get install -yq --no-install-recommends $(awk '{print $1'} /opt/installed.txt) \
+&&  apt-get clean \
+&&  rm -rf /var/lib/apt/lists/*
 
 # Install setuptools and wheel first, needed by plotly
 RUN pip3 config --global set global.cache-dir false && \
@@ -81,14 +76,20 @@ RUN pip3 config --global set global.cache-dir false && \
         mpi4py \
         scons \
         h5py \
-        lavavu \
         yapf
+
+# the following are required to have lavavu use our mesa build
+ENV LV_LIB_DIRS=/usr/local/lib/x86_64-linux-gnu/
+ENV LV_INC_DIRS=/usr/local/include/
+ENV LV_OSMESA=1
+ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib/x86_64-linux-gnu/
+RUN pip install  -vvv --no-binary :all: lavavu
 
 RUN pip3 install git+https://github.com/underworldcode/underworld2@v2.10_release
 RUN pip3 install UWGeodynamics
 
-# environment variable will internally run xvfb when uw.visualisation is imported,
-# see /opt/underworld2/visualisation/__init__.py
-ENV UW_USE_XVFB 1
+WORKDIR ${HOME}
 
 USER ${NB_USER}
+
+RUN git clone https://github.com/underworldcode/underworld2
